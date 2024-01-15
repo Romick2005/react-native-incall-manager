@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2017 Henry Lin @zxcpoiu
- * 
+ *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -36,7 +36,6 @@ import android.os.Looper;
 import android.provider.Settings;
 import androidx.annotation.Nullable;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.Window;
@@ -44,7 +43,6 @@ import android.view.WindowManager;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.LifecycleEventListener;
-import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
@@ -122,13 +120,6 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
      */
     public enum AudioDevice { SPEAKER_PHONE, WIRED_HEADSET, EARPIECE, BLUETOOTH, NONE }
 
-    /** AudioManager state. */
-    public enum AudioManagerState {
-        UNINITIALIZED,
-        PREINITIALIZED,
-        RUNNING,
-    }
-
     private int savedAudioMode = AudioManager.MODE_INVALID;
     private boolean savedIsSpeakerPhoneOn = false;
     private boolean savedIsMicrophoneMute = false;
@@ -166,9 +157,9 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
     private Set<AudioDevice> audioDevices = new HashSet<>();
 
     interface MyPlayerInterface {
-        public boolean isPlaying();
-        public void startPlay(Map<String, Object> data);
-        public void stopPlay();
+        boolean isPlaying();
+        void startPlay(Map<String, Object> data);
+        void stopPlay();
     }
 
     @Override
@@ -294,7 +285,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             };
             ReactContext reactContext = getReactApplicationContext();
             if (reactContext != null) {
-                reactContext.registerReceiver(wiredHeadsetReceiver, filter);
+                this.registerReceiver(reactContext, wiredHeadsetReceiver, filter, false);
             } else {
                 Log.d(TAG, "startWiredHeadsetEvent() reactContext is null");
             }
@@ -324,7 +315,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             };
             ReactContext reactContext = getReactApplicationContext();
             if (reactContext != null) {
-                reactContext.registerReceiver(noisyAudioReceiver, filter);
+                this.registerReceiver(reactContext, noisyAudioReceiver, filter, false);
             } else {
                 Log.d(TAG, "startNoisyAudioEvent() reactContext is null");
             }
@@ -391,7 +382,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             };
             ReactContext reactContext = getReactApplicationContext();
             if (reactContext != null) {
-                reactContext.registerReceiver(mediaButtonReceiver, filter);
+                this.registerReceiver(reactContext, mediaButtonReceiver, filter, false);
             } else {
                 Log.d(TAG, "startMediaButtonEvent() reactContext is null");
             }
@@ -877,7 +868,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
     public void setSpeakerphoneOn(final boolean enable) {
         if (enable != audioManager.isSpeakerphoneOn())  {
             Log.d(TAG, "setSpeakerphoneOn(): " + enable);
-	    audioManager.setMode(defaultAudioMode);
+            audioManager.setMode(defaultAudioMode);
             audioManager.setSpeakerphoneOn(enable);
         }
     }
@@ -918,8 +909,8 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
         }
     }
 
-    /** 
-     * This is part of start() process. 
+    /**
+     * This is part of start() process.
      * ringbackUriType must not empty. empty means do not play.
      */
     @ReactMethod
@@ -953,7 +944,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             ringbackUri = getRingbackUri(ringbackUriType);
             if (ringbackUri == null) {
                 Log.d(TAG, "startRingback(): no available media");
-                return;    
+                return;
             }
 
             mRingback = new myMediaPlayer();
@@ -971,7 +962,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             mRingback.startPlay(data);
         } catch(Exception e) {
             Log.d(TAG, "startRingback() failed", e);
-        }   
+        }
     }
 
     @ReactMethod
@@ -983,11 +974,11 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             }
         } catch(Exception e) {
             Log.d(TAG, "stopRingback() failed");
-        }   
+        }
     }
 
-    /** 
-     * This is part of start() process. 
+    /**
+     * This is part of start() process.
      * busytoneUriType must not empty. empty means do not play.
      * return false to indicate play tone failed and should be stop() immediately
      * otherwise, it will stop() after a tone completed.
@@ -1021,7 +1012,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             busytoneUri = getBusytoneUri(busytoneUriType);
             if (busytoneUri == null) {
                 Log.d(TAG, "startBusytone(): no available media");
-                return false;    
+                return false;
             }
 
             mBusytone = new myMediaPlayer();
@@ -1039,7 +1030,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
         } catch(Exception e) {
             Log.d(TAG, "startBusytone() failed", e);
             return false;
-        }   
+        }
     }
 
     public void stopBusytone() {
@@ -1050,7 +1041,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             }
         } catch(Exception e) {
             Log.d(TAG, "stopBusytone() failed");
-        }   
+        }
     }
 
     @ReactMethod
@@ -1165,7 +1156,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
             public boolean onError(MediaPlayer mp, int what, int extra) {
                 Log.d(TAG, String.format("MediaPlayer %s onError(). what: %d, extra: %d", name, what, extra));
                 //return True if the method handled the error
-                //return False, or not having an OnErrorListener at all, will cause the OnCompletionListener to be called. Get news & tips 
+                //return False, or not having an OnErrorListener at all, will cause the OnCompletionListener to be called. Get news & tips
                 return true;
             }
         });
@@ -1191,7 +1182,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                     audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
                 } else if (name.equals("mRingtone")) {
                     audioManager.setMode(AudioManager.MODE_RINGTONE);
-                } 
+                }
                 updateAudioRoute();
                 mp.start();
             }
@@ -1273,7 +1264,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
         String type;
         // --- _type would never be empty here. just in case.
         if (_type.equals("_DEFAULT_") ||  _type.isEmpty()) {
-            //type = fileSysWithExt; // --- 
+            //type = fileSysWithExt; // ---
             return getDefaultUserUri("defaultBusytoneUri");
         } else {
             type = _type;
@@ -1463,7 +1454,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
                         } else if (caller.equals("mRingtone")) {
                             audioManager.setMode(AudioManager.MODE_RINGTONE);
-                        } 
+                        }
                         InCallManagerModule.this.updateAudioRoute();
 
                         tg.startTone(toneType);
@@ -1667,9 +1658,20 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
         return selectedAudioDevice;
     }
 
+  /**
+   * Starting with Android 14, apps and services that target Android 14 and use context-registered
+   * receivers are required to specify a flag to indicate whether or not the receiver should be
+   * exported to all other apps on the device: either RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED
+   *
+   * <p>https://developer.android.com/about/versions/14/behavior-changes-14#runtime-receivers-exported
+   */
     /** Helper method for receiver registration. */
-    private void registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
-        getReactApplicationContext().registerReceiver(receiver, filter);
+    private void registerReceiver(Context context, BroadcastReceiver receiver, IntentFilter intentFilter, boolean exported) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        context.registerReceiver(mediaButtonReceiver, intentFilter, exported ? Context.RECEIVER_EXPORTED : Context.RECEIVER_NOT_EXPORTED);
+      } else {
+        context.registerReceiver(mediaButtonReceiver, intentFilter);
+      }
     }
 
     /** Helper method for unregistration of an existing receiver. */
@@ -1829,7 +1831,7 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
                     newAudioDevice = getPreferredAudioDevice();
                 }
             }
-            
+
             if (newAudioDevice == AudioDevice.BLUETOOTH
                     && bluetoothManager.getState() != AppRTCBluetoothManager.State.SCO_CONNECTED) {
                 newAudioDevice = getPreferredAudioDevice(true); // --- skip bluetooth
