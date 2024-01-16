@@ -1666,11 +1666,11 @@ public class InCallManagerModule extends ReactContextBaseJavaModule implements L
    * <p>https://developer.android.com/about/versions/14/behavior-changes-14#runtime-receivers-exported
    */
     /** Helper method for receiver registration. */
-    private void registerReceiver(Context context, BroadcastReceiver receiver, IntentFilter intentFilter, boolean exported) {
+    private static void registerReceiver(Context context, BroadcastReceiver receiver, IntentFilter intentFilter, boolean exported) {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        context.registerReceiver(mediaButtonReceiver, intentFilter, exported ? Context.RECEIVER_EXPORTED : Context.RECEIVER_NOT_EXPORTED);
+        context.registerReceiver(receiver, intentFilter, exported ? Context.RECEIVER_EXPORTED : Context.RECEIVER_NOT_EXPORTED);
       } else {
-        context.registerReceiver(mediaButtonReceiver, intentFilter);
+        context.registerReceiver(receiver, intentFilter);
       }
     }
 
